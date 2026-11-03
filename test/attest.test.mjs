@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { claimFor, readReturn, requestSign, sourceFromHistory } from "../index.mjs";
 
-const png = readFileSync(new URL("../../origin-verify/test/fixtures/png/rgb8.png", import.meta.url));
+const png = readFileSync(new URL("./fixtures/rgb8.png", import.meta.url));
 test("a claim holds only enumerated fields, and the hashes of the file", async () => {
     const c = await claimFor(png, { tool: "my-editor", source: "digitalCreation", mime: "image/png", rights: "CC0-1.0" });
     assert.equal(c.sha256, createHash("sha256").update(png).digest("hex"));
