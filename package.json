@@ -1,0 +1,39 @@
+{
+  "name": "@333eco/origin-attest",
+  "version": "0.1.0",
+  "description": "Lets a person sign what they made with their own passkey: builds the claim, takes them to sign.333.eco, and gives back a record anyone can check.",
+  "license": "CC0-1.0",
+  "author": "Thon Ly",
+  "homepage": "https://github.com/333eco/origin-attest.333.eco#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/333eco/origin-attest.333.eco.git"
+  },
+  "keywords": [
+    "provenance",
+    "passkey",
+    "webauthn",
+    "iptc",
+    "digital-source-type",
+    "transparency-log"
+  ],
+  "type": "module",
+  "exports": {
+    ".": "./index.mjs",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.mjs",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@333eco/origin-verify": "0.1.0"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  }
+}
