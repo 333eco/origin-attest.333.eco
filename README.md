@@ -6,27 +6,42 @@ Lets a person **Sign with HeartBank®**: they sign what they made, with their ow
 
 ## In your app
 
-```js
-import { claimFor, requestSign, readReturn, packFor, sourceFromHistory } from "@333eco/origin-attest";
+Keep a plain **Download** button, and add **Sign and download** beside it. Signing adds a permanent public record and asks for a passkey, so it's the person's choice each time.
 
-const file = await exportPng();                       // your export, as a Blob
-const claim = await claimFor(file, {
-  tool: "my-editor",                                     // your registered name
-  source: sourceFromHistory({ imports, mostly: 0.8 }),// how it was made, from your own history
-  rights: "CC0-1.0",                                  // optional: CC0-1.0, CC-BY-4.0, or LicenseRef-All-Rights-Reserved
+```js
+import { beginSign, finishSign, sourceFromHistory } from "@333eco/origin-attest";
+
+// The button. Export once, and pass that file: a second export can change the bytes.
+await beginSign(await exportPng(), {
+  filename: "my-design.png",
+  tool: "my-editor",                                   // your registered name
+  source: sourceFromHistory({ imports, mostly: 0.8 }), // how it was made, from your own history
+  rights: "CC0-1.0",                                   // optional
 });
-const { url } = await requestSign(claim);             // 403 unless your origin is registered
-location.assign(url);                                 // the person signs on sign.333.eco, then follows a link back
+// The person is now on sign.333.eco, which shows what they are signing and who asked. The file waits on their device, in IndexedDB.
+// If this throws, nothing was signed: let them download anyway.
 ```
 
-Back on your registered return page:
+On your registered return page, in the browser:
 
 ```js
-const index = readReturn();                           // the record's number
-const pack = await packFor(index);                    // { waiting: true } until the next hourly checkpoint
+const back = await finishSign();
+if (back) {
+  back.download();                  // the same bytes they started with
+  showAButtonThatCalls(back.download);
+  // back.index is the record's number. back.declined means they went back without signing, and it's their file either way.
+}
 ```
 
-A pack holds the record and everything needed to check it later, offline: keep it with the work if you like. Nothing has to be embedded in the file. Metadata gets stripped, so the record lives in the log, and a file finds it by what it still is:
+Keep that button: a browser may ask first, or refuse a download nobody tapped. Saying the record is on its way is fine, once: *"Signed. It joins the public log within the hour."* ⛔ Never a countdown.
+
+A record joins the log at the next hourly checkpoint. After that, a pack holds it and everything needed to check it later, offline:
+
+```js
+const pack = await packFor(back.index);   // { waiting: true } until the checkpoint
+```
+
+Nothing has to be embedded in the file. Metadata gets stripped, so the record lives in the log, and a file finds it by what it still is:
 
 ```js
 const { records } = await findFile(someFile);
@@ -35,6 +50,8 @@ const { records } = await findFile(someFile);
 
 The search reads the public log directly, so nobody learns what was checked.
 
+Every record is real and permanent, test signatures too. A signer can withdraw one, which shows as an event and never as erasure.
+
 ## How a work was made
 
 `sourceFromHistory` picks the IPTC digital source type from what your editor saw. It never looks at pixels.
@@ -42,9 +59,15 @@ The search reads the public log directly, so nobody learns what was checked.
 | your history | term | shown as |
 |---|---|---|
 | your own tools only | `digitalCreation` | Made by hand on a device |
-| an import of unknown origin | `composite` | |
-| an import carrying AI markers | `compositeSynthetic` | |
-| mostly one AI import (`mostly` is your threshold) | `trainedAlgorithmicMedia` | |
+| imports, none carrying AI markers | `composite` | Combined from several works |
+| AI imports under `mostly` | `compositeSynthetic` | Combined, partly with AI |
+| AI imports at or over `mostly` | `trainedAlgorithmicMedia` | Made with AI |
+
+**`share` is the import's part of the visible pixels of the finished work.** Count what can still be seen: what was painted over or erased doesn't count, and transparent pixels are in neither side of the fraction, because a sprite on a transparent canvas is the whole picture however small it sits. AI shares add, so cutting one image into pieces changes nothing.
+
+**`mostly`: we recommend 0.8.** Both labels say AI is there, so the threshold only decides between *made with* and *combined with*. A wrong *Made with AI* takes credit from someone who did real work; a wrong *Combined, partly with AI* still discloses the AI. So the line sits high, and 0.8 still means real added work, a fifth of what's visible.
+
+Be honest about what you can't see. An import with no markers may still be AI, which is why `composite` never says otherwise. Your own templates and clip art count as imports if AI made them. Someone can trace AI art stroke by stroke, and it reads as `digitalCreation`.
 
 `declared: true` means the person chose the term themselves, and it's shown as what they said.
 
@@ -54,13 +77,13 @@ The search reads the public log directly, so nobody learns what was checked.
 |---|---|
 | nothing | `exact` |
 | strips metadata, re-compresses a PNG | `same pixels` |
-| re-encodes as JPEG, scales | `similar` (a hint that two pictures look alike, nothing more) |
+| strips a JPEG's metadata, re-encodes as JPEG, scales | `similar` (a hint that two pictures look alike, nothing more) |
 
-`pixels` is exact for PNG only: JPEG and other decoders differ from browser to browser, so those files carry `phash` alone.
+`pixels` is exact for PNG only: JPEG and other decoders differ from browser to browser, so those files carry `phash` alone. Prefer PNG where the record matters.
 
 ## Not here yet
 
 - C2PA or CAWG embedding (SPEC §5.7). The record doesn't need it, and a stripped file loses it anyway.
-- Self-serve registration. Your origin and return page are added by hand.
+- Self-serve registration. Your origin and one return page are added by hand.
 
 CC0.
