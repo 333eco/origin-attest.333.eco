@@ -54,20 +54,32 @@ Every record is real and permanent, test signatures too. A signer can withdraw o
 
 ## How a work was made
 
-`sourceFromHistory` picks the IPTC digital source type from what your editor saw. It never looks at pixels.
+`sourceFromHistory` picks the IPTC digital source type from what your editor knows. It never looks at pixels.
 
-| your history | term | shown as |
+```js
+sourceFromHistory({
+  imports: [
+    { ai: true,  share: 0.35 },   // a template AI helped make: 35% of what can be seen
+    { ai: false, share: 0.20 },   // a photo the person uploaded, no AI markers
+  ],
+  mostly: 0.8,
+});
+```
+
+| what's in the work | term | shown as |
 |---|---|---|
-| your own tools only | `digitalCreation` | Made by hand on a device |
-| imports, none carrying AI markers | `composite` | Combined from several works |
-| AI imports under `mostly` | `compositeSynthetic` | Combined, partly with AI |
-| AI imports at or over `mostly` | `trainedAlgorithmicMedia` | Made with AI |
+| the person's own tools, and templates made without AI | `digitalCreation` | Made by hand on a device |
+| uploads with no AI markers, nothing known to be AI | `composite` | Combined from several works |
+| AI assets under `mostly` | `compositeSynthetic` | Combined, partly with AI |
+| AI assets at or over `mostly` | `trainedAlgorithmicMedia` | Made with AI |
 
-**`share` is the import's part of the visible pixels of the finished work.** Count what can still be seen: what was painted over or erased doesn't count, and transparent pixels are in neither side of the fraction, because a sprite on a transparent canvas is the whole picture however small it sits. AI shares add, so cutting one image into pieces changes nothing.
+**What counts as `ai: true`:** an upload carrying AI markers, and anything in your own library that AI helped make, templates and clip art included, however much a person did as well. Tag those assets when you add them. If you don't know how an asset was made, list it with `ai: false`, so the work reads as `composite` and never as made by hand. Leave out only what you know was made without AI.
 
-**`mostly`: we recommend 0.8.** Both labels say AI is there, so the threshold only decides between *made with* and *combined with*. A wrong *Made with AI* takes credit from someone who did real work; a wrong *Combined, partly with AI* still discloses the AI. So the line sits high, and 0.8 still means real added work, a fifth of what's visible.
+**`share` is the asset's part of the visible pixels of the finished work.** Count what can still be seen: what was painted over or erased doesn't count, and transparent pixels are in neither side of the fraction, because a graphic on a transparent canvas is the whole picture however small it sits. AI shares add, so cutting one image into pieces changes nothing.
 
-Be honest about what you can't see. An import with no markers may still be AI, which is why `composite` never says otherwise. Your own templates and clip art count as imports if AI made them. Someone can trace AI art stroke by stroke, and it reads as `digitalCreation`.
+**`mostly`: we recommend 0.8.** Both AI labels say AI is there, so the threshold only decides between *made with* and *combined with*. A wrong *Made with AI* takes credit from someone who did real work; a wrong *Combined, partly with AI* still discloses the AI. So the line sits high, and 0.8 still means real added work, a fifth of what's visible.
+
+**What this can't see.** An upload with no markers may still be AI, which is why `composite` never says otherwise. Someone can trace AI art stroke by stroke, and it reads as `digitalCreation`. A label is what the editor knew, not a finding about the work.
 
 `declared: true` means the person chose the term themselves, and it's shown as what they said.
 

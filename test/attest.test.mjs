@@ -24,12 +24,15 @@ test("a file that is not a picture is still signable, by its bytes alone", async
 });
 test("sourceFromHistory: the editor's own record picks the IPTC term, and the threshold is the app's to choose", () => {
     assert.equal(sourceFromHistory({}), "digitalCreation");
-    assert.equal(sourceFromHistory({ imports: [{ aiMarkers: false, share: 0.9 }] }), "composite");
-    assert.equal(sourceFromHistory({ imports: [{ aiMarkers: true, share: 0.2 }], mostly: 0.8 }), "compositeSynthetic");
-    assert.equal(sourceFromHistory({ imports: [{ aiMarkers: true, share: 0.9 }], mostly: 0.8 }), "trainedAlgorithmicMedia");
-    assert.equal(sourceFromHistory({ imports: [{ aiMarkers: true, share: 0.45 }, { aiMarkers: true, share: 0.45 }], mostly: 0.8 }), "trainedAlgorithmicMedia", "cutting one AI image into pieces changes nothing");
-    assert.equal(sourceFromHistory({ imports: [{ aiMarkers: true, share: 0.3 }, { aiMarkers: false, share: 0.6 }], mostly: 0.8 }), "compositeSynthetic", "an import with no markers is not counted as AI");
-    assert.throws(() => sourceFromHistory({ imports: [{ aiMarkers: true, share: 0.9 }] }), /mostly/);
+    assert.equal(sourceFromHistory({ imports: [{ ai: false, share: 0.9 }] }), "composite");
+    assert.equal(sourceFromHistory({ imports: [{ ai: true, share: 0.2 }], mostly: 0.8 }), "compositeSynthetic");
+    assert.equal(sourceFromHistory({ imports: [{ ai: true, share: 0.9 }], mostly: 0.8 }), "trainedAlgorithmicMedia");
+    assert.equal(sourceFromHistory({ imports: [{ ai: true, share: 0.45 }, { ai: true, share: 0.45 }], mostly: 0.8 }), "trainedAlgorithmicMedia", "cutting one AI image into pieces changes nothing");
+    assert.equal(sourceFromHistory({ imports: [{ ai: true, share: 0.3 }, { ai: false, share: 0.6 }], mostly: 0.8 }), "compositeSynthetic", "an import with no markers is not counted as AI");
+    assert.equal(sourceFromHistory({ imports: [{ ai: true, share: 1 }], mostly: 0.8 }), "trainedAlgorithmicMedia", "a design that is only an AI-assisted template is made with AI");
+    assert.equal(sourceFromHistory({ imports: [{ ai: true, share: 0.5 }], mostly: 0.8 }), "compositeSynthetic", "half template, half the person's own work");
+    assert.equal(sourceFromHistory({ imports: [{ ai: true, share: 0.05 }], mostly: 0.8 }), "compositeSynthetic", "a small AI-assisted element still means it can't read as made by hand");
+    assert.throws(() => sourceFromHistory({ imports: [{ ai: true, share: 0.9 }] }), /mostly/);
 });
 test("requestSign: a registered caller gets an address; a refusal is an error with its reason", async () => {
     const ok = await requestSign({ v: 2 }, { signOrigin: "https://s.test", fetch: async (u, i) => { assert.equal(u, "https://s.test/sign/par"); assert.deepEqual(JSON.parse(i.body), { claim: { v: 2 } }); return Response.json({ request_uri: "urn:sign.333.eco:abc", expires_in: 300 }, { status: 201 }); } });

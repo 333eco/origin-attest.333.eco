@@ -6,8 +6,8 @@ export type FileLike = Blob | ArrayBuffer | Uint8Array;
 export declare const SIGN_ORIGIN: string;
 export declare const LOG_BASE: string;
 export function claimFor(file: FileLike, options: ClaimOptions): Promise<Claim>;
-/** `share` is the import's part of the VISIBLE pixels of the finished work. AI shares add. `mostly` is required once an AI import exists. Recommended: 0.8. */
-export function sourceFromHistory(history?: { imports?: { aiMarkers: boolean; share: number }[]; mostly?: number }): Source;
+/** `ai`: it carries AI markers, or you know AI helped make it. `share`: its part of the VISIBLE pixels of the finished work. AI shares add. `mostly` is required once an AI asset exists. We recommend 0.8. */
+export function sourceFromHistory(history?: { imports?: { ai: boolean; share: number }[]; mostly?: number }): Source;
 export function requestSign(claim: Claim, options?: { signOrigin?: string; state?: string; fetch?: typeof fetch }): Promise<{ url: string; requestUri: string; expiresIn: number }>;
 export function readReturn(hash?: string): { index: number; state: string | null } | { declined: true; state: string | null } | null;
 export interface BeginOptions extends ClaimOptions { filename?: string; signOrigin?: string; navigate?: (url: string) => void; fetch?: typeof fetch }

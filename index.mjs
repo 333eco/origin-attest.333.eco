@@ -31,13 +31,13 @@ export async function claimFor(file, { tool, source, mime, rights, imports, decl
 
 /**
  * An editor that knows its own history can say how a work was made, in the same vocabulary as /media (SPEC §10). Nothing here looks at pixels.
- * `imports`: what entered from outside, each { aiMarkers: bool, share: 0..1 }. `share` is the import's part of the VISIBLE pixels of the finished work: what was painted over, erased or left
+ * `imports`: what entered from outside, and your own library's assets that AI helped make, each { ai: bool, share: 0..1 }. `ai` is true when the asset carries AI markers or you know AI helped make it. `share` is the import's part of the VISIBLE pixels of the finished work: what was painted over, erased or left
  * transparent does not count, because a sprite on a transparent canvas is the whole picture however small it sits. AI shares ADD, so cutting one image into pieces changes nothing.
- * `mostly` is where the work is made with AI rather than combined with it, and the app must choose it. Recommended: 0.8.
+ * `mostly` is where the work is made with AI rather than combined with it, and the app must choose it. We recommend 0.8.
  */
 export function sourceFromHistory({ imports = [], mostly } = {}) {
   if (!imports.length) return "digitalCreation";
-  const ai = imports.filter((i) => i.aiMarkers);
+  const ai = imports.filter((i) => i.ai);
   if (!ai.length) return "composite";
   if (typeof mostly !== "number") throw new TypeError("mostly: the share of the visible pixels at which AI imports are the work");
   return ai.reduce((sum, i) => sum + i.share, 0) >= mostly ? "trainedAlgorithmicMedia" : "compositeSynthetic";
