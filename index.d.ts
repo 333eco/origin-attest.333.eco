@@ -15,8 +15,10 @@ export function beginSign(file: FileLike, options: BeginOptions): Promise<{ clai
 export interface Finished { file: Blob; filename: string; claim: Claim; state: string | null; index?: number; declined?: true; download(): void }
 export function finishSign(options?: { hash?: string }): Promise<Finished | null>;
 export type Pack = { kind: "b-origin-pack"; v: 1; entry: unknown; checkpoint: string; inclusion: string[]; stamps: unknown; opening?: unknown };
-export function packFor(index: number, options?: { logBase?: string; trust?: unknown; fetch?: typeof fetch; header?: (height: number) => Promise<Uint8Array | null> }): Promise<Pack | { waiting: true; size: number }>;
+export function packFor(index: number, options?: { logBase?: string; trust?: unknown; fetch?: typeof fetch; opening?: unknown; header?: (height: number) => Promise<Uint8Array | null> }): Promise<Pack | { waiting: true; size: number }>;
+export function embedProof(file: Blob, index: number, options?: { logBase?: string; trust?: unknown; fetch?: typeof fetch; opening?: unknown; mime?: string }): Promise<{ waiting: true; size: number } | { file: Blob; pack: unknown }>;
 export interface FoundRecord { index: number; how: "exact" | "same pixels" | "similar"; distance?: number; withdrawnAt?: string; entry: unknown }
 export function findFile(file: FileLike, options?: { logBase?: string; trust?: unknown; fetch?: typeof fetch; maxDistance?: number; decode?: (bytes: Uint8Array) => Promise<Raster | null> }): Promise<{ hashes: { sha256: string; bytes: number; pixels?: string; phash?: string }; size: number; records: FoundRecord[] }>;
 export function verifyPack(pack: unknown, trust: unknown, options?: { header?: (height: number) => Promise<Uint8Array | null> }): Promise<{ ok: boolean; why?: string; [k: string]: unknown }>;
 export function canonical(value: unknown): string;
+export function verifyFile(file: Uint8Array, trust: unknown, options?: { header?: (height: number) => Promise<Uint8Array | null> }): Promise<{ ok: boolean; embedded: boolean; why?: string; revealed?: boolean; withdrawalChecked?: boolean; [k: string]: unknown }>;

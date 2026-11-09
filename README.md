@@ -41,6 +41,14 @@ A record joins the log at the next hourly checkpoint. After that, a pack holds i
 const pack = await packFor(back.index);   // { waiting: true } until the checkpoint
 ```
 
+A PNG or JPEG can also carry its proof inside, if the person wants that. The picture doesn't change, and the file can then be checked with nothing else:
+
+```js
+const out = await embedProof(file, back.index);   // { waiting: true } until the checkpoint; otherwise { file, pack }
+```
+
+Pass `opening` only if the person chooses it: it adds the passkey's signature, and it shows that passkey's public key, so anyone can link every file carrying the same key.
+
 Nothing has to be embedded in the file. Metadata gets stripped, so the record lives in the log, and a file finds it by what it still is:
 
 ```js

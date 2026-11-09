@@ -3,7 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
-import { beginSign, claimFor, finishSign, readReturn, requestSign, sourceFromHistory } from "../index.mjs";
+import { beginSign, claimFor, embedProof, finishSign, readReturn, requestSign, sourceFromHistory, packFor } from "../index.mjs";
 
 const png = readFileSync(new URL("./fixtures/rgb8.png", import.meta.url));
 test("a claim holds only enumerated fields, and the hashes of the file", async () => {
@@ -80,4 +80,16 @@ test("a file left behind for a day is cleared the next time someone signs; a rec
     await store.put("old", { at: t - 25 * 3600_000 }); await store.put("recent", { at: t - 3600_000 });
     await beginSign(png, { ...opts, store, fetch: okFetch, navigate: () => {}, now: () => t });
     assert.equal(store.m.has("old"), false); assert.equal(store.m.has("recent"), true);
+});
+
+test("embedProof: waits until the record is in the log, and refuses a file the record does not describe", async () => {
+    const trust = (await import("@333eco/origin-verify/trust")).default;
+    const real = await fetch("https://log.333.eco/origin/checkpoint").then((r) => r.text()).catch(() => null);
+    if (!real) return;
+    const f = (url) => fetch(url);
+    assert.deepEqual(Object.keys(await embedProof(new Blob([png], { type: "image/png" }), 1e9, { trust, fetch: f })).sort(), ["size", "waiting"], "not in the tree yet: it waits, and embeds nothing");
+    await assert.rejects(embedProof(new Blob([png], { type: "image/png" }), 0, { trust, fetch: f }), /different file/, "CONTROL: real record 0 describes another file");
+    const pack = await packFor(0, { trust, fetch: f, opening: { salt: "AA" } });
+    assert.deepEqual(pack.opening, { salt: "AA" }, "packFor carries an opening only when given one");
+    assert.equal((await packFor(0, { trust, fetch: f })).opening, undefined, "CONTROL: and never otherwise");
 });

@@ -1,7 +1,7 @@
 // @333eco/origin-attest. CC0. What an app needs to let a person sign what they made: the claim, the trip to sign.333.eco, and the record afterward.
 // ⛔ It signs nothing itself and holds no key. The person's own passkey signs, on sign.333.eco, because a passkey is bound to that origin (SPEC T1) and the page
 // showing what is signed must not be another site's (T9). A log-in session can never sign; that is the point of the shape.
-import { canonical, checkCheckpoint, findRecords, hashFile, packRecord, verifyPack } from "@333eco/origin-verify";
+import { canonical, checkCheckpoint, embedPack, findRecords, hashFile, packRecord, verifyFile, verifyPack } from "@333eco/origin-verify";
 import { canvasDecoder } from "@333eco/origin-verify/media";
 import defaultTrust from "@333eco/origin-verify/trust";
 
@@ -111,12 +111,24 @@ const getter = (logBase, f) => async (path) => { const r = await f(logBase + pat
 /**
  * The record and everything needed to check it later with nobody's help. A record joins the log at the next hourly checkpoint, so until then this answers { waiting: true }: say so once, never as a countdown.
  */
-export async function packFor(index, { logBase = LOG_BASE, trust = defaultTrust, fetch: f = globalThis.fetch, header } = {}) {
+export async function packFor(index, { logBase = LOG_BASE, trust = defaultTrust, fetch: f = globalThis.fetch, header, opening } = {}) {
   const get = getter(logBase, f), raw = await get("checkpoint");
   const cp = await checkCheckpoint(new TextDecoder().decode(raw), trust);
   if (!cp.ok) throw new Error(cp.why);
   if (index >= cp.size) return { waiting: true, size: cp.size };
-  return packRecord(get, index, trust, { header });
+  return packRecord(get, index, trust, { header, ...(opening ? { opening } : {}) });
+}
+
+/**
+ * A copy of the file with its proof inside (PNG or JPEG), so it can be checked with nothing else and no network. The picture is untouched, and the proof comes out to the exact signed bytes.
+ * Answers { waiting: true } until the record has joined the log. Refuses a file the record does not describe.
+ * `opening` also carries the passkey's signature, and with it the passkey's public key: anyone can link every file carrying the same key. Pass it only on the signer's own choice.
+ */
+export async function embedProof(file, index, options = {}) {
+  const pack = await packFor(index, options);
+  if (pack.waiting) return pack;
+  const type = file.type ?? (options.mime ?? "application/octet-stream");
+  return { file: new Blob([embedPack(await asBytes(file), pack)], { type }), pack };
 }
 
 /** Finds a file's records by what it still is: exact bytes, the same pixels after a platform strips or re-encodes it, or a near picture. Reads the public log directly, so nobody learns what was checked. */
@@ -129,4 +141,4 @@ export async function findFile(file, { logBase = LOG_BASE, trust = defaultTrust,
   const found = await findRecords(get, cp.size, hashes, maxDistance === undefined ? {} : { maxDistance });
   return { hashes, size: cp.size, records: found };
 }
-export { verifyPack, canonical };
+export { verifyPack, verifyFile, canonical };
