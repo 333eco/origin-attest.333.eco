@@ -106,4 +106,4 @@ sourceFromHistory({
 - C2PA or CAWG embedding (SPEC §5.7). The record doesn't need it, and a stripped file loses it anyway.
 - Self-serve registration. Your origin and one return page are added by hand.
 
-CC0.
+Your choice of CC0-1.0 or Apache-2.0 (see `LICENSE`).
